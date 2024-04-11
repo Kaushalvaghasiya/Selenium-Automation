@@ -24,6 +24,8 @@ thread_count = 0
 max_thread_count = 5
 base_url = 'https://www.logiclitz.com/page/'
 
+threads = []
+
 for page_num in range(1, max_page_num + 1):  # Update range to include max_page_num
     page_url = f"{base_url}{page_num}/"
     driver.get(page_url)
@@ -38,16 +40,23 @@ for page_num in range(1, max_page_num + 1):  # Update range to include max_page_
         
         # Check if the link contains an image
         if link.find_elements(By.TAG_NAME, 'img'):
-            # Check if the maximum thread count is reached
-            if thread_count >= max_thread_count:
-                # Wait for the threads to finish before starting new ones
-                time.sleep(5)
-                thread_count = 0
-            
             # Create a thread to visit the link
             thread = threading.Thread(target=visit_link, args=(link_url,))
+            threads.append(thread)
             thread.start()
             thread_count += 1
             
+            # Check if the maximum thread count is reached
+            if thread_count >= max_thread_count:
+                # Wait for the threads to finish before starting new ones
+                for thread in threads:
+                    thread.join()
+                threads = []
+                thread_count = 0
+
+# Join the remaining threads
+for thread in threads:
+    thread.join()
+
 # Close the WebDriver instance
 driver.quit()
